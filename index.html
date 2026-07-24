@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="我的 3D 小屋 —— 个人网站入口">
+    <title>我的卧室</title>
+    <script>
+      // 移动端 / 窄屏直接进入 2D 作品集(3D 场景在小屏体验不佳)
+      (function () {
+        var isMobileUA = /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+        if (isMobileUA || Math.min(window.innerWidth, window.innerHeight) < 620) {
+          location.replace("site.html");
+        }
+      })();
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="icon" href="data:,">
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;700&family=Playfair+Display:wght@600;700&family=Space+Grotesk:wght@500;700&display=swap"
+    >
+    <link rel="stylesheet" href="assets/css/room.css">
+    <!-- 访客统计(vercount,免费开源;本地预览显示 --,部署后自动生效) -->
+    <script defer src="https://events.vercount.one/js"></script>
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js",
+          "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.164.1/examples/jsm/"
+        }
+      }
+    </script>
+  </head>
+  <body class="room-entry">
+    <a class="skip-link" href="site.html">跳过 3D 动画,直接进入作品集</a>
+
+    <main class="room-shell" aria-label="3D 卧室入口">
+      <div class="room-scene" id="room-scene" aria-hidden="true"></div>
+
+      <div class="room-topbar">
+        <div class="room-counter" aria-label="站点访问统计">
+          <span class="room-counter__item">
+            <span class="room-counter__label">访问</span>
+            <span class="room-counter__value" id="vercount_value_site_pv">--</span>
+          </span>
+          <span class="room-counter__item">
+            <span class="room-counter__label">访客</span>
+            <span class="room-counter__value" id="vercount_value_site_uv">--</span>
+          </span>
+        </div>
+        <button class="style-toggle" type="button" data-style-toggle>Style: Classic</button>
+      </div>
+
+      <div class="room-loader" data-loader role="status" aria-live="polite">
+        <div class="loader-ring" aria-hidden="true"></div>
+        <p class="loader-text">LOADING</p>
+      </div>
+
+      <div class="room-actions" data-actions>
+        <button class="enter-button" type="button" data-enter disabled>进入屏幕 →</button>
+      </div>
+
+      <div class="room-hint" data-status>正在加载 3D 卧室...</div>
+
+      <section class="screen-portal" data-portal aria-hidden="true" aria-label="电脑屏幕中的个人网站">
+        <div class="screen-chrome">
+          <div class="screen-bar" aria-hidden="true"><span></span><span></span><span></span></div>
+          <iframe src="site.html" title="个人作品集"></iframe>
+        </div>
+      </section>
+
+      <button class="portal-back" type="button" data-back hidden>← 返回卧室</button>
+
+      <noscript>
+        <div class="room-noscript">
+          当前浏览器未启用 JavaScript,你仍然可以直接进入
+          <a href="site.html">个人作品集</a>。
+        </div>
+      </noscript>
+    </main>
+
+    <script type="module" src="assets/js/room.js"></script>
+  </body>
+</html>

@@ -1,0 +1,264 @@
+/* ============================================================
+   3D 卧室入口 · 覆盖层 UI
+   ============================================================ */
+
+:root {
+  --room-bg: #f1e6d2;
+  --ink: #1c1813;
+  --panel: rgba(255, 253, 248, 0.92);
+  --accent: #a47a3d;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: var(--room-bg);
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  color: var(--ink);
+  transition: background 0.8s ease;
+}
+
+body.theme-dark { --room-bg: #23222b; --ink: #ece7dd; --panel: rgba(38, 36, 46, 0.92); }
+
+.skip-link {
+  position: fixed;
+  top: -60px;
+  left: 20px;
+  z-index: 60;
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: #1c1813;
+  color: #fff;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  text-decoration: none;
+  transition: top 0.25s ease;
+}
+.skip-link:focus-visible { top: 14px; }
+
+.room-shell { position: fixed; inset: 0; }
+
+/* ---------- WebGL / CSS3D 层 ---------- */
+.room-scene { position: absolute; inset: 0; }
+.room-scene canvas { display: block; }
+/* CSS3DRenderer 的容器(JS 创建)在 canvas 之下 */
+.room-scene .css3d-layer { position: absolute; inset: 0; }
+.room-scene .webgl-layer { position: absolute; inset: 0; pointer-events: none; }
+
+/* ---------- 顶栏 ---------- */
+.room-topbar {
+  position: fixed;
+  top: 22px;
+  right: 24px;
+  z-index: 30;
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  opacity: 1;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.screen-mode .room-topbar { opacity: 0; pointer-events: none; transform: translateY(-12px); }
+
+.room-counter {
+  display: flex;
+  background: var(--panel);
+  border-radius: 14px;
+  box-shadow: 0 16px 40px -24px rgba(60, 42, 20, 0.55);
+  overflow: hidden;
+}
+.room-counter__item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 9px 20px;
+}
+.room-counter__item + .room-counter__item { border-left: 1px solid rgba(28, 24, 19, 0.1); }
+body.theme-dark .room-counter__item + .room-counter__item { border-left-color: rgba(236, 231, 221, 0.14); }
+.room-counter__label {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  opacity: 0.6;
+}
+.room-counter__value { font-weight: 700; font-size: 15px; line-height: 1.1; }
+
+.style-toggle {
+  padding: 0 20px;
+  border: 0;
+  border-radius: 14px;
+  background: var(--panel);
+  color: var(--ink);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  box-shadow: 0 16px 40px -24px rgba(60, 42, 20, 0.55);
+  transition: transform 0.2s ease;
+}
+.style-toggle:hover { transform: translateY(-1px); }
+
+/* ---------- 加载器 ---------- */
+.room-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 18px;
+  background: var(--room-bg);
+  transition: opacity 0.6s ease, visibility 0.6s ease;
+}
+.room-loader.is-hidden { opacity: 0; visibility: hidden; }
+
+.loader-ring {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid rgba(164, 122, 61, 0.2);
+  border-top-color: var(--accent);
+  animation: spin 1s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.loader-text {
+  margin: 0;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.5em;
+  color: var(--accent);
+}
+
+/* ---------- 进入按钮 / 状态提示 ---------- */
+.room-actions {
+  position: fixed;
+  left: 32px;
+  bottom: 34px;
+  z-index: 30;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+body.screen-mode .room-actions { opacity: 0; pointer-events: none; transform: translateY(12px); }
+
+.enter-button {
+  padding: 16px 34px;
+  border: 0;
+  border-radius: 999px;
+  background: #1c1813;
+  color: #f7f2e9;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  box-shadow: 0 24px 50px -22px rgba(28, 24, 19, 0.85);
+  transition: transform 0.25s ease, box-shadow 0.25s ease, opacity 0.3s ease;
+}
+.enter-button:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 30px 60px -24px rgba(28, 24, 19, 0.9); }
+.enter-button:disabled { opacity: 0.4; cursor: wait; }
+
+.room-hint {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 25;
+  transform: translateX(-50%);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  opacity: 0.55;
+  transition: opacity 0.4s ease;
+}
+.room-hint.is-hidden, body.screen-mode .room-hint { opacity: 0; }
+
+/* ---------- 屏幕 Portal(CSS3D 内容) ---------- */
+.screen-portal {
+  /* 实际 transform 由 CSS3DRenderer 控制;JS 挂载前先隐藏防闪现 */
+  background: #100f0d;
+  visibility: hidden;
+}
+.screen-portal.is-mounted { visibility: visible; }
+.screen-portal .screen-chrome {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #f6f1e7;
+  overflow: hidden;
+}
+.screen-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 16px;
+  background: #16130f;
+  flex: 0 0 auto;
+}
+.screen-bar span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #5c554a;
+}
+.screen-bar span:nth-child(1) { background: #e0655c; }
+.screen-bar span:nth-child(2) { background: #e3b552; }
+.screen-bar span:nth-child(3) { background: #7cae6d; }
+
+/* 房间模式:整个 portal 不拦截指针(!important 覆盖 CSS3DObject 的内联 auto),
+   滚轮统一落在场景上驱动相机推进;进入屏幕模式后恢复交互 */
+body:not(.screen-mode) .screen-portal { pointer-events: none !important; }
+
+.screen-portal iframe {
+  flex: 1;
+  width: 100%;
+  border: 0;
+  background: #f6f1e7;
+  /* 3D 模式下不可交互,进入屏幕后放开 */
+  pointer-events: none;
+}
+body.screen-mode .screen-portal iframe { pointer-events: auto; }
+
+/* 进入屏幕模式:portal 仍由 CSS3D 定位(相机对齐后恰好充满视口),仅放开交互 */
+
+/* ---------- 返回按钮 ---------- */
+.portal-back {
+  position: fixed;
+  left: 50%;
+  bottom: 26px;
+  z-index: 35;
+  transform: translateX(-50%);
+  padding: 12px 28px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(22, 19, 15, 0.88);
+  color: #f7f2e9;
+  font-family: "Space Grotesk", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  backdrop-filter: blur(8px);
+  box-shadow: 0 20px 45px -20px rgba(0, 0, 0, 0.7);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.4s ease, transform 0.25s ease;
+}
+body.screen-mode .portal-back {
+  opacity: 0.35;
+  pointer-events: auto;
+}
+body.screen-mode .portal-back:hover { opacity: 1; transform: translateX(-50%) translateY(-2px); }
+
+/* ---------- noscript ---------- */
+.room-noscript {
+  position: fixed;
+  inset: auto 0 0 0;
+  z-index: 50;
+  padding: 18px;
+  background: #fffdf8;
+  text-align: center;
+  font-size: 14px;
+}
