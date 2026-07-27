@@ -295,7 +295,7 @@ const cyl = (material, [x, y, z], [rt, rb, h, seg = 20], { shadow = true, open =
  * 用现成 .glb 模型替换某件家具时,把对应开关改为 false,
  * 并在文件末尾的 PROPS 里登记模型(见 README「使用 3D 模型素材」)。 */
 const BUILTIN = {
-  desk: false, chair: false, monitor: true, keyboard: false, mouse: true,
+  desk: false, chair: false, monitor: true, keyboard: false, mouse: false,
   note: true, books: true, cup: false, plant: false, console: false,
   bin: true, poster: true, apple: true,
 };
@@ -365,7 +365,7 @@ if (BUILTIN.mouse) {
   mouse.rotation.y = -0.22;
 }
 if (BUILTIN.note) {
-  const note = box(M.note, [-1.18, DESK_SURFACE + 0.006, 0.72], [0.24, 0.008, 0.24], { shadow: false });
+  const note = box(M.note, [-1.18, DESK_SURFACE + 0.006, 0.62], [0.24, 0.008, 0.24], { shadow: false });
   note.rotation.y = 0.3;
 }
 
@@ -475,32 +475,29 @@ if (BUILTIN.bin) {
   scene.add(bottom);
 }
 
-/* ---------- 墙饰:自绘海报 ---------- */
+/* ---------- 墙饰:海报(data.js 的 room.posterImage 可替换图片) ---------- */
 if (BUILTIN.poster) {
+  // 内置手绘海报(默认,也是图片加载失败时的回退)
   const cv = document.createElement("canvas");
   cv.width = 512; cv.height = 680;
   const ctx = cv.getContext("2d");
   ctx.fillStyle = "#f5ecd8";
   ctx.fillRect(0, 0, 512, 680);
-  // 抽象笔触:青绿弧带
   ctx.strokeStyle = "#3aa8a0";
   ctx.lineWidth = 58;
   ctx.lineCap = "round";
   ctx.beginPath();
   ctx.arc(200, 300, 150, Math.PI * 0.7, Math.PI * 1.75);
   ctx.stroke();
-  // 品红圆
   ctx.fillStyle = "#d4608c";
   ctx.beginPath();
   ctx.arc(350, 420, 74, 0, Math.PI * 2);
   ctx.fill();
-  // 黄色三角
   ctx.fillStyle = "#e8b84a";
   ctx.beginPath();
   ctx.moveTo(120, 560); ctx.lineTo(230, 470); ctx.lineTo(255, 590);
   ctx.closePath();
   ctx.fill();
-  // 深色描边字
   ctx.fillStyle = "#1c1813";
   ctx.font = "700 54px 'Space Grotesk', sans-serif";
   ctx.fillText("KEEP", 60, 110);
@@ -508,15 +505,32 @@ if (BUILTIN.poster) {
   ctx.font = "500 20px 'JetBrains Mono', monospace";
   ctx.fillStyle = "#a47a3d";
   ctx.fillText("- room / works -", 60, 630);
-  const tex = new THREE.CanvasTexture(cv);
-  tex.colorSpace = THREE.SRGBColorSpace;
-  const poster = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.92, 1.22),
-    new THREE.MeshToonMaterial({ map: tex, gradientMap })
-  );
+  const fallbackTex = new THREE.CanvasTexture(cv);
+  fallbackTex.colorSpace = THREE.SRGBColorSpace;
+
+  const POSTER_H = 1.22;
+  const posterMat = new THREE.MeshToonMaterial({ map: fallbackTex, gradientMap });
+  const poster = new THREE.Mesh(new THREE.PlaneGeometry(0.92, POSTER_H), posterMat);
   poster.position.set(-1.95, 2.35, -1.12);
   poster.rotation.z = 0.015;
   scene.add(poster);
+
+  // 配置了自定义图片:加载成功后替换,并按图片宽高比调整海报比例(高度不变)
+  const customUrl = window.SITE_DATA?.room?.posterImage;
+  if (customUrl) {
+    new THREE.TextureLoader().load(
+      customUrl,
+      (tex) => {
+        tex.colorSpace = THREE.SRGBColorSpace;
+        posterMat.map = tex;
+        posterMat.needsUpdate = true;
+        const aspect = tex.image.width / tex.image.height;
+        poster.scale.x = Math.min(1.5, aspect / (0.92 / POSTER_H));   // 过宽的图最多放大 1.5 倍
+      },
+      undefined,
+      () => console.warn(`海报图片加载失败,已回退内置海报: ${customUrl}`)
+    );
+  }
 }
 
 /* ---------- 墙饰:体素苹果 ---------- */
@@ -740,16 +754,18 @@ if (true) {
 const PROPS = [
   {
     url: "assets/models/desk.glb",          // Adjustable Desk by jeff cobesign (CC-BY, Poly Pizza)
-    position: [0, 0, 0.64],
+    position: [0, 0, 0.57],
     targetHeight: 1.09,                     // 桌面顶 ≈ 原积木桌高
     targetFootprint: [4.0, 1.5],            // 桌板 宽4.0 × 深1.5
     rotationY: -Math.PI / 2,                // 平直长边贴墙,L 翼右前朝椅子(椅子坐进缺口)
+    tint: { "Plane": 0xa8764a },            // 只染桌板为暖木色,腿保持黑色
   },
   {
     url: "assets/models/Chair.glb",
     position: [0.1, 0, 1.78],
     targetHeight: 1.55,
     rotationY: Math.PI,                     // 面向桌子(背对相机)
+    tint: 0x46543f,                         // 整体染墨绿(单一网格,只能整体染)
   },
   {
     url: "assets/models/Keyboard.glb",
@@ -763,7 +779,7 @@ const PROPS = [
   },
   {
     url: "assets/models/Plant.glb",
-    position: [1.28, DESK_SURFACE, 0.0],
+    position: [1.28, DESK_SURFACE, 0.08],
     targetHeight: 0.55,
   },
   {
@@ -772,7 +788,30 @@ const PROPS = [
     targetSize: 0.5,
     rotationY: 2.7,                         // 屏幕面转向相机
   },
+  {
+    url: "assets/models/mouse.glb",
+    position: [0.92, DESK_SURFACE, 0.55],
+    targetSize: 0.24,
+    rotationY: -0.25,
+  },
 ];
+
+/* 模型染色:tint 为数字则整体染色;为对象则按 mesh 名(正则)分部件染色,
+ * 例如 { "Plane": 0x9c6b45 } 只把名字含 Plane 的部件染成木色 */
+const applyTint = (root, tint) => {
+  if (tint == null) return;
+  root.traverse((c) => {
+    if (!c.isMesh) return;
+    const recolor = (color) => {
+      c.material = c.material.clone();
+      c.material.color.set(color);
+    };
+    if (typeof tint === "number") { recolor(tint); return; }
+    for (const [pattern, color] of Object.entries(tint)) {
+      if (new RegExp(pattern, "i").test(c.name)) { recolor(color); break; }
+    }
+  });
+};
 
 const gltfLoader = new GLTFLoader();
 PROPS.forEach((p) => {
@@ -808,6 +847,7 @@ PROPS.forEach((p) => {
       wrapper.traverse((c) => {
         if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
       });
+      applyTint(wrapper, p.tint);
       scene.add(wrapper);
     },
     undefined,

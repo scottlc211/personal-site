@@ -114,7 +114,7 @@ window.SITE_DATA = {
   /* ---------- 时间轴(按时间顺序,从早到晚) ---------- */
   timeline: [
     { date: "2015",    title: "开始接触编程",       tags: ["兴趣起点"] },
-    { date: "2019.09", title: "计算机相关专业本科", tags: ["C / Java / Python", "数据结构"] },
+    { date: "2019.09", title: "计算机相关专业本科", tags: ["HTML / WEB / JavaScript / Python", "数据结构"] },
     { date: "2023.06", title: "毕业并正式入职",     tags: ["应用开发", "团队协作"] },
     { date: "2024.06", title: "开始探索 AI 辅助开发", tags: ["ChatGPT", "效率提升"] },
     { date: "2025.03", title: "第一个完整的个人项目", tags: ["从想法到落地"] },
@@ -127,5 +127,14 @@ window.SITE_DATA = {
     text: "如果您想参与 项目开发|一次新的合作,可以直接通过邮箱联系我",
     github: "https://github.com/yourname",
     email: "you@example.com",
+  },
+
+  /* ---------- 3D 房间装饰 ----------
+   * posterImage: 墙上海报的图片路径(放到 assets/img/ 下,建议竖幅,如 3:4)。
+   *              留空则显示内置手绘海报;图片加载失败也会自动回退。
+   *              示例: posterImage: "assets/img/my-poster.jpg"
+   */
+  room: {
+    posterImage: "",
   },
 };

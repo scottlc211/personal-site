@@ -31,6 +31,7 @@ python -m http.server 8642
 | `about` | 个人简介 + 三组技能 |
 | `timeline` | 人生/职业时间轴 |
 | `contact` | GitHub 地址、邮箱 |
+| `room` | 3D 房间装饰:`posterImage` 填图片路径即可替换墙上海报(建议竖幅 3:4,放 `assets/img/`),留空显示内置手绘海报,加载失败自动回退 |
 
 图片放置:
 
