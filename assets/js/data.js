@@ -22,7 +22,7 @@ window.SITE_DATA = {
     lines: ["It's never too late", "to build something new"],
     subtitle: "重新出发,为时不晚",
     // 右侧名片上的署名(手写体风格展示)
-    signature: "yourname",
+    signature: "干饭人",
   },
 
   /* ---------- 导航 ---------- */
@@ -43,8 +43,8 @@ window.SITE_DATA = {
     items: [
       {
         title: "示例项目 Alpha",
-        desc: "一个面向日常效率场景的桌面小工具。",
-        tags: ["Electron", "TypeScript", "SQLite"],
+        desc: "一个可以文生图、图生图的网页工具，以及一套完整的电商产品图设计。",
+        tags: ["gpt-image2", "AI生图", "商品工作台"],
         image: "",
         detail:
           "这里写项目的详细介绍:解决什么问题、核心功能、技术选型与踩过的坑。支持多段文字,用 \\n\\n 分段。",
@@ -114,8 +114,8 @@ window.SITE_DATA = {
   /* ---------- 时间轴(按时间顺序,从早到晚) ---------- */
   timeline: [
     { date: "2015",    title: "开始接触编程",       tags: ["兴趣起点"] },
-    { date: "2019.09", title: "计算机相关专业本科", tags: ["HTML / WEB / JavaScript / Python", "数据结构"] },
-    { date: "2023.06", title: "毕业并正式入职",     tags: ["应用开发", "团队协作"] },
+    { date: "2019.09", title: "毕业并正式入职",     tags: ["应用开发", "团队协作"] },
+    { date: "2019.09", title: "工作经历掌握的技能", tags: ["HTML / WEB / JavaScript / Python", "数据结构"] },
     { date: "2024.06", title: "开始探索 AI 辅助开发", tags: ["ChatGPT", "效率提升"] },
     { date: "2025.03", title: "第一个完整的个人项目", tags: ["从想法到落地"] },
     { date: "2026.06", title: "个人网站上线",       tags: ["思维整理", "Oᴗo"] },
@@ -125,8 +125,8 @@ window.SITE_DATA = {
   contact: {
     heading: "期待与您的合作",
     text: "如果您想参与 项目开发|一次新的合作,可以直接通过邮箱联系我",
-    github: "https://github.com/yourname",
-    email: "you@example.com",
+    github: "https://github.com/scottlc211",
+    email: "ll12@932000.xyz",
   },
 
   /* ---------- 3D 房间装饰 ----------
@@ -135,6 +135,6 @@ window.SITE_DATA = {
    *              示例: posterImage: "assets/img/my-poster.jpg"
    */
   room: {
-    posterImage: "",
+    posterImage: "assets/img/my-poster.jpg",
   },
 };

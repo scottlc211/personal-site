@@ -1,0 +1,3 @@
+[24579152ms] [WARNING] [.WebGL-0x683c00137a00] GL_CONTEXT_LOST_KHR: glDebugMessageCallbackKHR: Context has been lost. @ http://localhost:8777/index.html:0
+[24590076ms] [WARNING] WebGL: CONTEXT_LOST_WEBGL: loseContext: context lost @ http://localhost:8777/index.html:0
+[24590082ms] [LOG] THREE.WebGLRenderer: Context Lost. @ https://cdn.jsdelivr.net/npm/three@0.164.1/build/three.module.js:28868

@@ -297,7 +297,7 @@ const cyl = (material, [x, y, z], [rt, rb, h, seg = 20], { shadow = true, open =
 const BUILTIN = {
   desk: false, chair: false, monitor: true, keyboard: false, mouse: false,
   note: true, books: true, cup: false, plant: false, console: false,
-  bin: true, poster: true, apple: true,
+  bin: true, poster: true, apple: true, rug: false,
 };
 
 /* ---------- 桌子 ---------- */
@@ -345,6 +345,8 @@ if (BUILTIN.monitor) {
   portalObj.position.copy(SCREEN_CENTER);
   scene.add(portalObj);
   setPortalPixels(PORTAL_PX_W);
+  // 供 CSS 在屏幕模式下按 contain 尺寸铺放 portal
+  document.documentElement.style.setProperty("--screen-aspect", String(SCREEN_ASPECT));
   portalEl.setAttribute("aria-hidden", "false");
   portalEl.classList.add("is-mounted");
 }
@@ -726,21 +728,23 @@ if (true) {
   box(M.nsRight, [-1.5, 0.52, 2.82], [0.36, 0.02, 0.24], { ry: 0.25 });
   cyl(M.keycap, [-1.12, 0.51, 2.98], [0.055, 0.05, 0.11, 12]);          // 马克杯
   // 地毯(白底黑点)
-  const rcv = document.createElement("canvas");
-  rcv.width = 256; rcv.height = 200;
-  const rc = rcv.getContext("2d");
-  rc.fillStyle = "#efe8d8"; rc.fillRect(0, 0, 256, 200);
-  rc.fillStyle = "rgba(30, 26, 20, 0.75)";
-  for (let y = 0; y < 5; y++)
-    for (let x = 0; x < 7; x++)
-      rc.fillRect(20 + x * 34 + (y % 2) * 10, 18 + y * 38, 7, 7);
-  const rtex = new THREE.CanvasTexture(rcv);
-  rtex.colorSpace = THREE.SRGBColorSpace;
-  M.rug.map = rtex;
-  const rug = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 3.1), M.rug);
-  rug.position.set(0.35, 0.013, 2.1);
-  rug.receiveShadow = true;
-  scene.add(rug);
+  if (BUILTIN.rug) {
+    const rcv = document.createElement("canvas");
+    rcv.width = 256; rcv.height = 200;
+    const rc = rcv.getContext("2d");
+    rc.fillStyle = "#efe8d8"; rc.fillRect(0, 0, 256, 200);
+    rc.fillStyle = "rgba(30, 26, 20, 0.75)";
+    for (let y = 0; y < 5; y++)
+      for (let x = 0; x < 7; x++)
+        rc.fillRect(20 + x * 34 + (y % 2) * 10, 18 + y * 38, 7, 7);
+    const rtex = new THREE.CanvasTexture(rcv);
+    rtex.colorSpace = THREE.SRGBColorSpace;
+    M.rug.map = rtex;
+    const rug = new THREE.Mesh(new THREE.BoxGeometry(4.4, 0.025, 3.1), M.rug);
+    rug.position.set(0.35, 0.013, 2.1);
+    rug.receiveShadow = true;
+    scene.add(rug);
+  }
 }
 
 /* ---------- 可选:加载现成 .glb 模型素材 ----------
@@ -792,7 +796,7 @@ const PROPS = [
     url: "assets/models/mouse.glb",
     position: [0.92, DESK_SURFACE, 0.55],
     targetSize: 0.24,
-    rotationY: -0.25,
+    rotationY: Math.PI - 0.25,              // 按键端朝向使用者
   },
 ];
 
@@ -980,18 +984,45 @@ addEventListener("resize", () => {
 
 /* ---------- 加载完成 ---------- */
 let firstFrame = false;
-const ready = () => {
+const percentEl = document.querySelector("[data-loader-percent]");
+const barFillEl = document.querySelector("[data-loader-bar]");
+let realProgress = 0;     // Three.js 资源真实进度(0~1)
+let shownProgress = 0;    // 展示进度,缓动逼近真实值
+let assetsReady = false;
+let revealed = false;
+
+// GLTFLoader / TextureLoader 默认走 DefaultLoadingManager,total 会随排队增长,取 max 保证单调
+THREE.DefaultLoadingManager.onProgress = (_url, loaded, total) => {
+  if (total > 0) realProgress = Math.max(realProgress, loaded / total);
+};
+
+const reveal = () => {
+  if (revealed) return;
+  revealed = true;
   loaderEl.classList.add("is-hidden");
   enterBtn.disabled = false;
   statusEl.textContent = "向下滚动进入屏幕,屏幕里滚到顶再向上滚可退出";
   setTimeout(() => statusEl.classList.add("is-hidden"), 6000);
 };
+
+// 首帧渲染 + iframe 就绪前最多显示到 96%,避免"假 100%"后还在等待
+const progressTick = () => {
+  const target = assetsReady ? 100 : Math.min(realProgress * 100, 96);
+  shownProgress += (target - shownProgress) * 0.075;
+  if (assetsReady && shownProgress > 99.2) shownProgress = 100;
+  percentEl.textContent = Math.round(shownProgress) + "%";
+  barFillEl.style.width = shownProgress + "%";
+  if (shownProgress >= 100) { reveal(); return; }
+  requestAnimationFrame(progressTick);
+};
+progressTick();
+
 const iframeReady = new Promise((resolve) => {
   iframeEl.addEventListener("load", resolve, { once: true });
   setTimeout(resolve, 3500);
 });
 iframeReady.then(() => {
-  const wait = () => (firstFrame ? ready() : requestAnimationFrame(wait));
+  const wait = () => (firstFrame ? (assetsReady = true) : requestAnimationFrame(wait));
   wait();
 });
 

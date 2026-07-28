@@ -54,8 +54,26 @@
       </div>
 
       <div class="room-loader" data-loader role="status" aria-live="polite">
-        <div class="loader-ring" aria-hidden="true"></div>
-        <p class="loader-text">LOADING</p>
+        <div class="loader-glow loader-glow--a" aria-hidden="true"></div>
+        <div class="loader-glow loader-glow--b" aria-hidden="true"></div>
+        <div class="loader-sparkles" aria-hidden="true">
+          <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+        </div>
+        <div class="loader-orbit" aria-hidden="true">
+          <span class="loader-ring loader-ring--outer"></span>
+          <span class="loader-ring loader-ring--mid"></span>
+          <span class="loader-ring loader-ring--dash"></span>
+          <span class="loader-core"></span>
+          <span class="loader-satellite"></span>
+          <span class="loader-percent" data-loader-percent>0%</span>
+        </div>
+        <p class="loader-text" aria-hidden="true">
+          <span>L</span><span>O</span><span>A</span><span>D</span><span>I</span><span>N</span><span>G</span>
+        </p>
+        <div class="loader-bar" aria-hidden="true">
+          <span class="loader-bar__fill" data-loader-bar></span>
+        </div>
+        <p class="loader-status">正在搭建 3D 卧室…</p>
       </div>
 
       <div class="room-actions" data-actions>
