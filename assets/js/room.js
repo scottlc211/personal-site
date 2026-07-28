@@ -798,6 +798,14 @@ const PROPS = [
     targetSize: 0.24,
     rotationY: Math.PI - 0.25,              // 按键端朝向使用者
   },
+  {
+    url: "assets/models/Oriental.glb",
+    position: [0.35, 0.005, 2.1],           // 与原内置地毯同位,微抬避免与地板 z-fighting
+    targetFootprint: [4.4, 3.1],
+    targetHeight: 0.03,
+    rotationY: Math.PI / 2,                 // 模型长边沿 z,转 90° 让长边贴墙(沿 x)
+    castShadow: false,                      // 地毯只接收阴影,避免薄片自阴影
+  },
 ];
 
 /* 模型染色:tint 为数字则整体染色;为对象则按 mesh 名(正则)分部件染色,
@@ -849,7 +857,7 @@ PROPS.forEach((p) => {
         p.position[2] - center.z
       );
       wrapper.traverse((c) => {
-        if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
+        if (c.isMesh) { c.castShadow = p.castShadow !== false; c.receiveShadow = true; }
       });
       applyTint(wrapper, p.tint);
       scene.add(wrapper);
