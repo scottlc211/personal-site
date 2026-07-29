@@ -68,6 +68,15 @@ const styleBtn = document.querySelector("[data-style-toggle]");
 const portalEl = document.querySelector("[data-portal]");
 const iframeEl = portalEl.querySelector("iframe");
 
+/* 状态提示条:显示一段文字,片刻后自动淡出 */
+let statusTimer;
+const flashStatus = (text, duration = 2600) => {
+  statusEl.textContent = text;
+  statusEl.classList.remove("is-hidden");
+  clearTimeout(statusTimer);
+  statusTimer = setTimeout(() => statusEl.classList.add("is-hidden"), duration);
+};
+
 /* ---------- 渲染器 ---------- */
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(46, innerWidth / innerHeight, 0.1, 80);
@@ -696,8 +705,109 @@ if (true) {
   frame.rotation.y = -Math.PI / 2 + 0.15;
   frame.castShadow = true;
   scene.add(frame);
-  box(M.leaf, [CX, 1.29, CZ - 0.05], [0.16, 0.12, 0.16]);               // 绿色小盒
 }
+
+/* ---------- 唱片机 + 背景音乐(五斗柜台面,点击播放/暂停) ----------
+ * THREE.PositionalAudio 空间音频:声音从唱片机位置发出,随相机远近自然衰减。
+ * 音源与曲名在 data.js 的 room.music 配置;播放时唱片旋转、飘出音符。 */
+const music = { group: null, disc: null, notes: [], sound: null, ready: false, vol: 0.85 };
+{
+  const g = new THREE.Group();
+  g.position.set(4.05, 1.24, 0.55);            // 五斗柜台面中段
+  g.rotation.y = -Math.PI / 2 + 0.1;           // 与柜子同朝向,微转更生动
+  const part = (geo, m, [x, y, z]) => {
+    const mm = new THREE.Mesh(geo, m);
+    mm.position.set(x, y, z);
+    mm.castShadow = true;
+    g.add(mm);
+    return mm;
+  };
+  part(new THREE.BoxGeometry(0.44, 0.07, 0.34), M.lampBase, [0, 0.035, 0]);                    // 木质机身
+  const disc = part(new THREE.CylinderGeometry(0.135, 0.135, 0.012, 24), M.dark, [-0.05, 0.078, 0]); // 黑胶
+  const label = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.013, 16), M.nsRight);  // 唱片标签
+  label.position.y = 0.002;
+  disc.add(label);
+  const pin = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.03, 8), M.keycap);     // 中轴
+  pin.position.y = 0.012;
+  disc.add(pin);
+  part(new THREE.CylinderGeometry(0.024, 0.028, 0.05, 10), M.chairBase, [0.16, 0.095, -0.1]);  // 唱臂基座
+  const arm = part(new THREE.BoxGeometry(0.014, 0.012, 0.19), M.chairBase, [0.075, 0.118, -0.06]);
+  arm.rotation.y = -1.12;                       // 唱臂从基座斜伸到唱片上方
+  part(new THREE.BoxGeometry(0.03, 0.02, 0.05), M.chairBase, [-0.01, 0.112, -0.02]);           // 唱头
+  part(new THREE.CylinderGeometry(0.02, 0.022, 0.025, 10), M.keycap, [0.17, 0.082, 0.11]);     // 旋钮
+  // 点击热区:罩住整机的隐形盒(Raycaster 不检查 visible,可命中但不渲染)
+  const hit = part(new THREE.BoxGeometry(0.6, 0.42, 0.5), new THREE.MeshBasicMaterial(), [0, 0.16, 0]);
+  hit.visible = false;
+  hit.castShadow = false;
+
+  // 音符贴图(播放时从唱片上方飘出,颜色随主题)
+  const ncv = document.createElement("canvas");
+  ncv.width = ncv.height = 128;
+  const nc = ncv.getContext("2d");
+  nc.font = "700 92px 'Space Grotesk', serif";
+  nc.textAlign = "center";
+  nc.textBaseline = "middle";
+  nc.fillStyle = "#fff";
+  nc.fillText("♪", 64, 66);
+  const noteTex = new THREE.CanvasTexture(ncv);
+  for (let i = 0; i < 3; i++) {
+    const sm = new THREE.SpriteMaterial({
+      map: noteTex, color: THEMES[themeName].nsRight,
+      transparent: true, opacity: 0, depthWrite: false,
+    });
+    themedMats.push({ m: sm, key: "nsRight" });
+    const sp = new THREE.Sprite(sm);
+    sp.scale.setScalar(0.14);
+    sp.userData.t = i / 3;
+    sp.position.set(-0.05, 0.2, 0);
+    g.add(sp);
+    music.notes.push(sp);
+  }
+  scene.add(g);
+  music.group = g;
+  music.disc = disc;
+
+  // 空间音频挂到唱片机上
+  const listener = new THREE.AudioListener();
+  camera.add(listener);
+  const sound = new THREE.PositionalAudio(listener);
+  sound.setRefDistance(2.6);
+  sound.setRolloffFactor(0.9);
+  sound.setVolume(music.vol);
+  g.add(sound);
+  music.sound = sound;
+  const src = window.SITE_DATA?.room?.music?.src || "assets/media/bgm.mp3";
+  new THREE.AudioLoader().load(
+    src,
+    (buffer) => { sound.setBuffer(buffer); sound.setLoop(true); music.ready = true; },
+    undefined,
+    () => console.warn(`背景音乐加载失败: ${src}`)
+  );
+}
+
+const musicRay = new THREE.Raycaster();
+const musicPointer = new THREE.Vector2();
+const pickMusic = (x, y) => {
+  musicPointer.set((x / innerWidth) * 2 - 1, -(y / innerHeight) * 2 + 1);
+  musicRay.setFromCamera(musicPointer, camera);
+  return musicRay.intersectObject(music.group, true).length > 0;
+};
+const toggleMusic = () => {
+  if (!music.ready) { flashStatus("背景音乐还没就绪(加载中或文件缺失)"); return; }
+  const ctx = music.sound.context;
+  if (ctx.state === "suspended") ctx.resume();   // 浏览器自动播放策略:须由用户手势解锁
+  if (music.sound.isPlaying) {
+    music.sound.pause();
+    flashStatus("♪ 音乐已暂停");
+  } else {
+    music.sound.play();
+    const title = window.SITE_DATA?.room?.music?.title;
+    flashStatus(title ? `♪ 正在播放:${title}` : "♪ 正在播放 — 再点唱片机暂停", 3600);
+  }
+};
+addEventListener("pointerdown", (e) => {
+  if (mode === "room" && pickMusic(e.clientX, e.clientY)) toggleMusic();
+});
 
 /* ---------- 沙发 + 茶几 + 地毯(前景) ---------- */
 if (true) {
@@ -899,6 +1009,9 @@ let portalHiRes = false;
 addEventListener("pointermove", (e) => {
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
   mouse.y = (e.clientY / innerHeight) * 2 - 1;
+  // 悬停唱片机时给出可点击提示
+  document.body.style.cursor =
+    mode === "room" && pickMusic(e.clientX, e.clientY) ? "pointer" : "";
 });
 
 const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
@@ -1009,8 +1122,7 @@ const reveal = () => {
   revealed = true;
   loaderEl.classList.add("is-hidden");
   enterBtn.disabled = false;
-  statusEl.textContent = "向下滚动进入屏幕,屏幕里滚到顶再向上滚可退出";
-  setTimeout(() => statusEl.classList.add("is-hidden"), 6000);
+  flashStatus("向下滚动进入屏幕,滚到顶再向上滚可退出;点击柜子上的唱片机可以听歌", 8000);
 };
 
 // 首帧渲染 + iframe 就绪前最多显示到 96%,避免"假 100%"后还在等待
@@ -1061,6 +1173,22 @@ const tick = () => {
   camera.position.lerpVectors(homeP, dockP, k);
   target.lerpVectors(CAM_HOME_TARGET, SCREEN_CENTER, k);
   camera.lookAt(target);
+
+  // 唱片机:播放时唱片旋转、音符上飘;屏幕模式下音量渐弱不抢注意力
+  if (music.sound) {
+    music.vol += ((mode === "screen" ? 0.3 : 0.85) - music.vol) * 0.05;
+    music.sound.setVolume(music.vol);
+  }
+  if (music.sound?.isPlaying) {
+    music.disc.rotation.y -= 0.045;
+    music.notes.forEach((sp, i) => {
+      const t = (sp.userData.t = (sp.userData.t + 0.0045) % 1);
+      sp.position.set(-0.05 + Math.sin(t * 6 + i * 2.1) * 0.08, 0.15 + t * 0.55, 0);
+      sp.material.opacity = Math.sin(Math.PI * t) * 0.9;
+    });
+  } else if (music.notes[0]?.material.opacity > 0) {
+    music.notes.forEach((sp) => (sp.material.opacity = 0));
+  }
 
   renderer.render(scene, camera);
   cssRenderer.render(scene, camera);

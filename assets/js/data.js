@@ -133,8 +133,15 @@ window.SITE_DATA = {
    * posterImage: 墙上海报的图片路径(放到 assets/img/ 下,建议竖幅,如 3:4)。
    *              留空则显示内置手绘海报;图片加载失败也会自动回退。
    *              示例: posterImage: "assets/img/my-poster.jpg"
+   * music:       背景音乐,点击房间里五斗柜上的唱片机播放/暂停。
+   *              src 放到 assets/media/ 下(推荐 mp3,浏览器需下载完才能播,建议 ≤5MB);
+   *              title 是播放提示里显示的曲名,可留空。
    */
   room: {
     posterImage: "assets/img/my-poster.jpg",
+    music: {
+      src: "assets/media/bgm.mp3",
+      title: "Conan Gray - Vodka Cranberry",
+    },
   },
 };
